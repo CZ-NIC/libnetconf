@@ -1996,17 +1996,13 @@ static int edit_merge_lists(xmlNodePtr merged_node, xmlNodePtr edit_node, xmlDoc
 	return (0);
 }
 
-static int is_leaf_list(xmlNodePtr node, xmlDocPtr model, struct nc_err** error)
+static int is_leaf_list(xmlNodePtr node, xmlDocPtr model)
 {
 	xmlNodePtr model_node;
 
 	model_node = find_element_model(node, model);
 	if (model_node == NULL) {
 		WARN("unknown element %s!", (char* )(node->name));
-		if (error != NULL) {
-			*error = nc_err_new(NC_ERR_UNKNOWN_ELEM);
-			nc_err_set(*error, NC_ERR_PARAM_INFO_BADELEM, (char*) (node->name));
-		}
 		return (0);
 	} else if (xmlStrcmp(model_node->name, BAD_CAST "leaf-list") == 0) {
 		return (1);
@@ -2034,7 +2030,7 @@ static int edit_merge_recursively(xmlNodePtr orig_node, xmlNodePtr edit_node, xm
 			 * the value will be updated, in case of leaf-list, the item will
 			 * be created
 			 */
-			if (is_leaf_list(edit_node->parent, model, error)) {
+			if (is_leaf_list(edit_node->parent, model)) {
 				/*
 				 * according to RFC 6020, sec. 7.7.7, leaf-list entries can be
 				 * created or deleted, but they can not be modified
@@ -2118,9 +2114,7 @@ static int edit_merge_recursively(xmlNodePtr orig_node, xmlNodePtr edit_node, xm
 			}
 
 			/* find matching element to children */
-			if ((leaf_list = is_leaf_list(children, model, error)) == -1) {
-				return (EXIT_FAILURE);
-			}
+			leaf_list = is_leaf_list(children, model);
 			aux = orig_node->children;
 			while (aux != NULL && matching_elements(children, aux, keys, leaf_list) == 0) {
 				aux = aux->next;
@@ -2162,9 +2156,7 @@ static int edit_merge_recursively(xmlNodePtr orig_node, xmlNodePtr edit_node, xm
 				 * to move the node. In other cases (mainly leafs) we
 				 * don't care the content, because we want to change it.
 				 */
-				if ((leaf_list = is_leaf_list(children, model, error)) == -1) {
-					return (EXIT_FAILURE);
-				}
+				leaf_list = is_leaf_list(children, model);
 
 				while (aux != NULL) {
 					next = aux->next;
